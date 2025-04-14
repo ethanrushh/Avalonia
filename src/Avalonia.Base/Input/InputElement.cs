@@ -695,6 +695,30 @@ namespace Avalonia.Input
         }
 
         /// <summary>
+		/// Called when FocusManager get the next TabStop to interact with the focused control.
+		/// </summary>
+		/// <returns>Next tab stop.</returns>
+		protected internal virtual InputElement? GetNextTabStopOverride() => null;
+
+        /// <summary>
+        /// Called when FocusManager get the previous TabStop to interact with the focused control.
+        /// </summary>
+        /// <returns>Previous tab stop.</returns>
+        protected internal virtual InputElement? GetPreviousTabStopOverride() => null;
+
+        /// <summary>
+        /// Called when FocusManager is looking for the first focusable element from the specified search scope.
+        /// </summary>
+        /// <returns>First focusable element if available.</returns>
+        protected internal virtual InputElement? GetFirstFocusableElementOverride() => null;
+
+        /// <summary>
+        /// Called when FocusManager is looking for the last focusable element from the specified search scope.
+        /// </summary>
+        /// <returns>Last focusable element if available/>.</returns>
+        protected internal virtual InputElement? GetLastFocusableElementOverride() => null;
+
+        /// <summary>
         /// Called before the <see cref="PointerCaptureLost"/> event occurs.
         /// </summary>
         /// <param name="e">The event args.</param>
@@ -703,12 +727,134 @@ namespace Avalonia.Input
 
         }
 
+        internal static bool ProcessTabStop(IInputElement? contentRoot,
+            IInputElement? focusedElement,
+            IInputElement? candidateTabStopElement,
+            bool isReverse,
+            bool didCycleFocusAtRootVisual,
+            out IInputElement? newTabStop)
+        {
+            newTabStop = null;
+            bool isTabStopOverridden = false;
+            bool isCandidateTabStopOverridden = false;
+            IInputElement? currentFocusedTarget = focusedElement;
+            InputElement? focusedTargetAsIE = focusedElement as InputElement; ;
+            InputElement? candidateTargetAsIE = candidateTabStopElement as InputElement;
+            InputElement? newCandidateTargetAsIE = null;
+            IInputElement? newCandidateTabStop = null;
+            IInputElement? spNewTabStop = null;
+
+            if (focusedTargetAsIE != null)
+            {
+                isTabStopOverridden = focusedTargetAsIE.ProcessTabStopInternal(candidateTabStopElement, isReverse, didCycleFocusAtRootVisual, out spNewTabStop);
+            }
+
+            if (!isTabStopOverridden && candidateTargetAsIE != null)
+            {
+                isTabStopOverridden = candidateTargetAsIE.ProcessCandidateTabStopInternal(focusedElement, null, isReverse, out spNewTabStop);
+            }
+            else if(isTabStopOverridden && newTabStop != null)
+            {
+                newCandidateTargetAsIE = spNewTabStop as InputElement;
+                if(newCandidateTargetAsIE != null)
+                {
+                    isCandidateTabStopOverridden = newCandidateTargetAsIE.ProcessCandidateTabStopInternal(focusedElement, spNewTabStop, isReverse, out newCandidateTabStop);
+                }
+            }
+
+            if(isCandidateTabStopOverridden)
+            {
+                if(newCandidateTabStop != null)
+                {
+                    newTabStop = newCandidateTabStop;
+                }
+
+                isTabStopOverridden = true;
+            }
+            else if(isTabStopOverridden)
+            {
+                if(newTabStop != null)
+                {
+                    newTabStop = spNewTabStop;
+                }
+
+                isTabStopOverridden = true;
+            }
+
+            return isTabStopOverridden;
+        }
+
+        private bool ProcessTabStopInternal(IInputElement? candidateTabStopElement,
+            bool isReverse,
+            bool didCycleFocusAtRootVisual,
+            out IInputElement? newTabStop)
+        {
+            InputElement? current = this;
+
+            newTabStop = null;
+            var candidateTabStopOverridden = false;
+
+            while(current != null && !candidateTabStopOverridden)
+            {
+                candidateTabStopOverridden = current.ProcessTabStopOverride(this,
+                    candidateTabStopElement,
+                    isReverse,
+                    didCycleFocusAtRootVisual,
+                    ref newTabStop);
+
+                current = (current as Visual)?.Parent as InputElement;
+            }
+            return candidateTabStopOverridden;
+        }
+
+        private bool ProcessCandidateTabStopInternal(IInputElement? currentTabStop,
+            IInputElement? overridenCandidateTabStopElement,
+            bool isReverse,
+            out IInputElement? newTabStop)
+        {
+            InputElement? current = this;
+
+            newTabStop = null;
+            var candidateTabStopOverridden = false;
+
+            while (current != null && !candidateTabStopOverridden)
+            {
+                candidateTabStopOverridden = current.ProcessCandidateTabStopOverride(currentTabStop,
+                    this,
+                    overridenCandidateTabStopElement,
+                    isReverse,
+                    ref newTabStop);
+
+                current = (current as Visual)?.Parent as InputElement;
+            }
+            return candidateTabStopOverridden;
+        }
+
+        protected internal virtual bool ProcessTabStopOverride(IInputElement? focusedElement,
+            IInputElement? candidateTabStopElement,
+            bool isReverse,
+            bool didCycleFocusAtRootVisual,
+            ref IInputElement? newTabStop)
+        {
+            return false;
+        }
+
+        protected internal virtual bool ProcessCandidateTabStopOverride(IInputElement? focusedElement,
+            IInputElement? candidateTabStopElement,
+            IInputElement? overridenCandidateTabStopElement,
+            bool isReverse,
+            ref IInputElement? newTabStop)
+        {
+            return false;
+        }
+
         /// <summary>
         /// Called before the <see cref="PointerWheelChanged"/> event occurs.
         /// </summary>
         /// <param name="e">The event args.</param>
         protected virtual void OnPointerWheelChanged(PointerWheelEventArgs e)
         {
+
         }
 
         protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
