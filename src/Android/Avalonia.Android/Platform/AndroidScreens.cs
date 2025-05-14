@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Android.Content;
 using Android.Hardware.Display;
+using Android.OS;
 using Android.Runtime;
 using Android.Util;
 using Android.Views;
@@ -20,7 +21,7 @@ internal class AndroidScreen(Display display) : PlatformScreen(new PlatformHandl
         var naturalOrientation = ScreenOrientation.Portrait;
         var rotation = display.Rotation;
 
-        if (OperatingSystem.IsAndroidVersionAtLeast(30)
+        if (Build.VERSION.SdkInt >= (BuildVersionCodes)30
             && display.DisplayId == context.Display?.DisplayId
             && context.Resources?.DisplayMetrics is { } primaryMetrics)
         {
@@ -97,7 +98,7 @@ internal sealed class AndroidScreens : ScreensBase<Display, AndroidScreen>, IDis
             return displays;
         }
 
-        if (OperatingSystem.IsAndroidVersionAtLeast(30) && _context.Display is { } defaultDisplay)
+        if (Build.VERSION.SdkInt >= (BuildVersionCodes)30 && _context.Display is { } defaultDisplay)
         {
             return [defaultDisplay];
         }

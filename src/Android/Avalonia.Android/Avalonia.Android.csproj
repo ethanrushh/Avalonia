@@ -6,8 +6,10 @@
     <AndroidResgenNamespace>Avalonia.Android.Internal</AndroidResgenNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <!--<ProjectReference Include="..\..\..\CustomView\CustomView.csproj" />-->
     <ProjectReference Include="..\..\..\packages\Avalonia\Avalonia.csproj" />
     <PackageReference Include="Xamarin.AndroidX.AppCompat" Version="1.6.1.5" />
+    <ProjectReference Include="..\CustomView\CustomView.csproj" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Avalonia.Base\Avalonia.Base.csproj" />
